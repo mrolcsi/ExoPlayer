@@ -25,6 +25,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v4.media.session.MediaSessionCompat;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
@@ -32,7 +33,6 @@ import androidx.annotation.StringRes;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
-import android.support.v4.media.session.MediaSessionCompat;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ControlDispatcher;
 import com.google.android.exoplayer2.DefaultControlDispatcher;
@@ -353,7 +353,6 @@ public class PlayerNotificationManager {
   private final IntentFilter intentFilter;
   private final Player.EventListener playerListener;
   private final NotificationBroadcastReceiver notificationBroadcastReceiver;
-  private final Map<String, NotificationCompat.Action> playbackActions;
   private final Map<String, NotificationCompat.Action> customActions;
   private final PendingIntent dismissPendingIntent;
   private final int instanceId;
@@ -379,6 +378,14 @@ public class PlayerNotificationManager {
   private int defaults;
   private int color;
   @DrawableRes private int smallIconResourceId;
+  @DrawableRes private int playIconResourceId;
+  @DrawableRes private int pauseIconResourceId;
+  @DrawableRes private int stopIconResourceId;
+  @DrawableRes private int rewindIconResourceId;
+  @DrawableRes private int fastForwardIconResourceId;
+  @DrawableRes private int previousIconResourceId;
+  @DrawableRes private int nextIconResourceId;
+  private Map<String, NotificationCompat.Action> playbackActions;
   private int visibility;
   @Priority private int priority;
   private boolean useChronometer;
@@ -611,6 +618,13 @@ public class PlayerNotificationManager {
     useChronometer = true;
     color = Color.TRANSPARENT;
     smallIconResourceId = R.drawable.exo_notification_small_icon;
+    playIconResourceId = R.drawable.exo_notification_play;
+    pauseIconResourceId = R.drawable.exo_notification_pause;
+    stopIconResourceId = R.drawable.exo_notification_stop;
+    rewindIconResourceId = R.drawable.exo_notification_rewind;
+    fastForwardIconResourceId = R.drawable.exo_notification_fastforward;
+    previousIconResourceId = R.drawable.exo_notification_previous;
+    nextIconResourceId = R.drawable.exo_notification_next;
     defaults = 0;
     priority = NotificationCompat.PRIORITY_LOW;
     fastForwardMs = DEFAULT_FAST_FORWARD_MS;
@@ -947,6 +961,96 @@ public class PlayerNotificationManager {
     invalidate();
   }
 
+  /**
+   * Sets the icon resource to be used when displaying the 'Play' action in the notification.
+   *
+   * @param playIconResourceId The resource id of the play icon.
+   */
+  public void setPlayIcon(@DrawableRes int playIconResourceId) {
+    if (this.playIconResourceId != playIconResourceId) {
+      this.playIconResourceId = playIconResourceId;
+      playbackActions = createPlaybackActions(context, instanceId);
+    }
+  }
+
+  /**
+   * Sets the icon resource to be used when displaying the 'Pause' action in the notification.
+   *
+   * @param pauseIconResourceId The resource id of the pause icon.
+   */
+  public void setPauseIcon(@DrawableRes int pauseIconResourceId) {
+    if (this.pauseIconResourceId != pauseIconResourceId) {
+      this.pauseIconResourceId = pauseIconResourceId;
+      playbackActions = createPlaybackActions(context, instanceId);
+      invalidate();
+    }
+  }
+
+  /**
+   * Sets the icon resource to be used when displaying the 'Stop' action in the notification.
+   *
+   * @param stopIconResourceId The resource id of the stop icon.
+   */
+  public void setStopIcon(@DrawableRes int stopIconResourceId) {
+    if (this.stopIconResourceId != stopIconResourceId) {
+      this.stopIconResourceId = stopIconResourceId;
+      playbackActions = createPlaybackActions(context, instanceId);
+      invalidate();
+    }
+  }
+
+  /**
+   * Sets the icon resource to be used when displaying the 'Rewind' action in the notification.
+   *
+   * @param rewindIconResourceId The resource id of the rewind icon.
+   */
+  public void setRewindIcon(@DrawableRes int rewindIconResourceId) {
+    if (this.rewindIconResourceId != rewindIconResourceId) {
+      this.rewindIconResourceId = rewindIconResourceId;
+      playbackActions = createPlaybackActions(context, instanceId);
+      invalidate();
+    }
+  }
+
+  /**
+   * Sets the icon resource to be used when displaying the 'Fast Forward' action in the notification.
+   *
+   * @param fastForwardIconResourceId The resource id of the fast forward icon.
+   */
+  public void setFastForwardIcon(@DrawableRes int fastForwardIconResourceId) {
+    if (this.fastForwardIconResourceId != fastForwardIconResourceId) {
+      this.fastForwardIconResourceId = fastForwardIconResourceId;
+      playbackActions = createPlaybackActions(context, instanceId);
+      invalidate();
+    }
+  }
+
+  /**
+   * Sets the icon resource to be used when displaying the 'Previous' action in the notification.
+   *
+   * @param previousIconResourceId The resource id of the previous icon.
+   */
+  public void setPreviousIcon(@DrawableRes int previousIconResourceId) {
+    if (this.previousIconResourceId != previousIconResourceId) {
+      this.previousIconResourceId = previousIconResourceId;
+      playbackActions = createPlaybackActions(context, instanceId);
+      invalidate();
+    }
+  }
+
+  /**
+   * Sets the icon resource to be used when displaying the 'Next' action in the notification.
+   *
+   * @param nextIconResourceId The resource id of the next icon.
+   */
+  public void setNextIcon(@DrawableRes int nextIconResourceId) {
+    if (this.nextIconResourceId != nextIconResourceId) {
+      this.nextIconResourceId = nextIconResourceId;
+      playbackActions = createPlaybackActions(context, instanceId);
+      invalidate();
+    }
+  }
+
   /** Forces an update of the notification if already started. */
   public void invalidate() {
     if (isNotificationStarted && player != null) {
@@ -1263,49 +1367,48 @@ public class PlayerNotificationManager {
         && player.getPlayWhenReady();
   }
 
-  private static Map<String, NotificationCompat.Action> createPlaybackActions(
-      Context context, int instanceId) {
+  private Map<String, NotificationCompat.Action> createPlaybackActions(Context context, int instanceId) {
     Map<String, NotificationCompat.Action> actions = new HashMap<>();
     actions.put(
         ACTION_PLAY,
         new NotificationCompat.Action(
-            R.drawable.exo_notification_play,
+            playIconResourceId,
             context.getString(R.string.exo_controls_play_description),
             createBroadcastIntent(ACTION_PLAY, context, instanceId)));
     actions.put(
         ACTION_PAUSE,
         new NotificationCompat.Action(
-            R.drawable.exo_notification_pause,
+            pauseIconResourceId,
             context.getString(R.string.exo_controls_pause_description),
             createBroadcastIntent(ACTION_PAUSE, context, instanceId)));
     actions.put(
         ACTION_STOP,
         new NotificationCompat.Action(
-            R.drawable.exo_notification_stop,
+            stopIconResourceId,
             context.getString(R.string.exo_controls_stop_description),
             createBroadcastIntent(ACTION_STOP, context, instanceId)));
     actions.put(
         ACTION_REWIND,
         new NotificationCompat.Action(
-            R.drawable.exo_notification_rewind,
+            rewindIconResourceId,
             context.getString(R.string.exo_controls_rewind_description),
             createBroadcastIntent(ACTION_REWIND, context, instanceId)));
     actions.put(
         ACTION_FAST_FORWARD,
         new NotificationCompat.Action(
-            R.drawable.exo_notification_fastforward,
+            fastForwardIconResourceId,
             context.getString(R.string.exo_controls_fastforward_description),
             createBroadcastIntent(ACTION_FAST_FORWARD, context, instanceId)));
     actions.put(
         ACTION_PREVIOUS,
         new NotificationCompat.Action(
-            R.drawable.exo_notification_previous,
+            previousIconResourceId,
             context.getString(R.string.exo_controls_previous_description),
             createBroadcastIntent(ACTION_PREVIOUS, context, instanceId)));
     actions.put(
         ACTION_NEXT,
         new NotificationCompat.Action(
-            R.drawable.exo_notification_next,
+            nextIconResourceId,
             context.getString(R.string.exo_controls_next_description),
             createBroadcastIntent(ACTION_NEXT, context, instanceId)));
     return actions;
